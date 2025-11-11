@@ -3,7 +3,6 @@ A gesture-controlled 4WD car using ESP32, MPU6050, and ESP-NOW, with a real-time
 
 # ESP32 Gesture & Web Controlled Car
 
-![ESP32 Rover](https://i.imgur.com/your-project-image.png) <!-- **Action:** Replace with a cool image of your project -->
 
 A feature-rich, gesture-controlled 4WD car built with the ESP32. This project combines low-latency **ESP-NOW** for hand-gesture control with a sophisticated **WebSocket-based web dashboard** for remote control and real-time telemetry monitoring.
 
