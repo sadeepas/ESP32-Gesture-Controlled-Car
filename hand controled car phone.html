@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Phoenix Control</title>
+<link rel="icon" href="icon/8.ico" type="image/x-icon">
+
+  <!-- PWA & Mobile Experience Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Command Center for the Phoenix Rover">
+  <meta name="theme-color" content="#020617">
+  <link rel="manifest" href="data:application/manifest+json;base64,ew0KICAgICJuYW1lIjogIlBob2VuaXggUm92ZXIgQ29udHJvbCIsDQogICAgInNob3J0X25hbWUiOiAiUGhvZW5peCBDdHJsiLA0KICAgICJkZXNjcmlwdGlvbiI6ICJDb21tYW5kIENlbnRlciBmb3IgdGhlIFBob2VuaXggUm9zZXIiLA0KICAgICJzdGFydF91cmwiOiAiLiIsDQogICAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsDQogICAgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwNCiAgICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDIwNjE3IiwNCiAgICAidGhlbWVfY29vb3IiOiAiIzA2MDYxNyIsDQogICAgImljb25zIjogWw0KICAgICAgICB7DQogICAgICAgICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOamMyMHRaV04wYVc5dWN5d3ZabWh2YkdsdVoxdHZjbWN2TUNBeU1EQXdJREl3SURFMElERXdNQ0F4TVRBd0lqNDhjbVZ6YzJsdmJqMGlhSFIwY0RvdkwzZDNkeTVuYjI5a1pTNWpiMjB2Ym1kNklISmxaR2x5Wlc1MElIZzlKblZzYkdWdFBTSXhPREE1SWlCN0lHWnBiR3c5SW5kb2FYUmxPeUJtYVd4c09pQnpkSEp2YTJVdk1EQTRNQ0F3SUdKbFkybHViR1U5SWtWVVlYUmxJR05vYjNCbFkzUnBiMjR2YzJsdmJqMGlZMkZ6WlNvME1TQXdJR2x1Wm04OEwzTjJaeTR4T0RrMUxqRXdNQ0F6TURBd0pTSXdNREF3SURFNE1EQXdNREF3SlNJd01EQXdJREU0TURBd01EQXdKUk5WUkVsT1JTQXdNQ0F3TURBdyIsDQogICAgICAgICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwNCiAgICAgICAgICAgICJzaXplcyI6ICJhbnkiDQogICAgICAgIH0NCiAgICBdDQp9DQo=">
+
+  <!-- External Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* --- CSS Variables and Base Styles --- */
+    :root {
+      --bg-dark: #020617; --text-light: #e2e8f0; --text-dark: #94a3b8;
+      --surface-dark: rgba(15, 23, 42, 0.65); --border-dark: rgba(56, 189, 248, 0.2);
+      --primary: #0ea5e9; --primary-glow: rgba(14, 165, 233, 0.4);
+      --secondary: #f43f5e; --secondary-glow: rgba(244, 63, 94, 0.4);
+      --success: #22c55e; --success-glow: rgba(34, 197, 94, 0.4);
+      --warning: #fbbf24; --warning-glow: rgba(251, 191, 36, 0.4);
+      --nav-height: 80px; --header-height: 65px;
+    }
+    html { height: 100%; }
+    body {
+      margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text-light); background-color: var(--bg-dark);
+      -webkit-font-smoothing: antialiased;
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(14, 165, 233, 0.1) 1px, transparent 0),
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.15), transparent 35%);
+      background-size: 1.5rem 1.5rem, 100% 100%;
+      height: 100dvh; width: 100vw; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .mono { font-family: 'Roboto Mono', monospace; }
+
+    /* --- Loader Styles --- */
+    #loader-wrapper {
+      position: fixed; inset: 0; z-index: 10000;
+      display: flex; align-items: center; justify-content: center;
+      background: #020617;
+      transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+    }
+    #loader-wrapper.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .loader-car-animation{animation:drive 2s ease-in-out infinite alternate;}@keyframes drive{0%{transform:translateX(-5px)}100%{transform:translateX(5px)}}
+    .loader-progress-bar{animation:progress 4s ease-in-out forwards;}@keyframes progress{0%{width:0}100%{width:100%}}
+
+
+    /* --- Main Layout --- */
+    .app-container {
+        display: none; /* Initially hidden */
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+    .app-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--header-height); padding: 0 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(2, 6, 23, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-dark);
+    }
+    .app-main {
+      flex-grow: 1; overflow: hidden; position: relative;
+      padding-top: var(--header-height);
+    }
+    .view-container {
+      width: 100%; height: 100%; display: flex;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .app-view {
+      width: 100%; height: 100%; flex-shrink: 0;
+      padding: 1rem; box-sizing: border-box;
+      overflow-y: auto; /* Allow individual views to scroll */
+    }
+
+    /* --- Common Components --- */
+    .glass-panel {
+      background: var(--surface-dark);
+      border: 1px solid var(--border-dark);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-radius: 1.5rem;
+      position: relative;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    }
+    .glass-panel::before, .glass-panel::after {
+      content: ''; position: absolute; width: 25px; height: 25px;
+      transition: all 0.3s ease; opacity: 0.8;
+      filter: drop-shadow(0 0 5px var(--primary-glow));
+    }
+    .glass-panel::before { top: -2px; left: -2px; border-top: 3px solid var(--primary); border-left: 3px solid var(--primary); border-radius: 1.5rem 0 0 0; }
+    .glass-panel::after { bottom: -2px; right: -2px; border-bottom: 3px solid var(--primary); border-right: 3px solid var(--primary); border-radius: 0 0 1.5rem 0; }
+    
+    .btn {
+      padding: 1rem; border-radius: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+      transition: all 0.2s ease; border: 1px solid var(--border-dark);
+      background: rgba(15, 23, 42, 0.8); color: var(--text-light); cursor: pointer; text-align: center;
+      -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn:hover:not(:disabled) { filter: brightness(1.2); }
+    .btn:active:not(:disabled) { transform: scale(0.96); filter: brightness(1.1); }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 0 20px var(--primary-glow); border-color: transparent; }
+    .btn-danger { background: var(--secondary); color: #fff; box-shadow: 0 0 20px var(--secondary-glow); border-color: transparent; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+    
+    .loading-spinner {
+      display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border-dark); border-radius: 50%;
+      border-top-color: var(--primary); animation: spin 1s ease-in-out infinite;
+    }
+    
+    /* --- Bottom Navigation --- */
+    .app-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      height: var(--nav-height); padding: 0.5rem 1rem; box-sizing: border-box;
+    }
+    .nav-dock {
+      width: 100%; height: 100%; display: flex; justify-content: space-around;
+      align-items: center; background: var(--surface-dark); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-dark); border-radius: 1.5rem;
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; color: var(--text-dark); border: none; background: none; height: 100%; flex: 1;
+      font-size: 0.75rem; font-weight: 600; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      position: relative;
+    }
+    .nav-item.active { color: var(--primary); transform: translateY(-4px); }
+    .nav-item svg { width: 28px; height: 28px; transition: transform 0.3s ease; }
+    .nav-item.active svg { transform: scale(1.1); }
+    .nav-item .active-indicator {
+      position: absolute; bottom: 4px; height: 4px; width: 0;
+      background-color: var(--primary); border-radius: 2px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px var(--primary-glow);
+    }
+    .nav-item.active .active-indicator { width: 24px; }
+
+    /* --- View Specific Styles --- */
+
+    /* Control View (now allows scrolling) */
+    #view-control { display: flex; flex-direction: column; gap: 1rem; }
+    #telemetry-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; flex-shrink: 0; }
+    .telemetry-item { padding: 0.75rem; text-align: center; transition: all 0.3s ease; }
+    .telemetry-item:active { transform: scale(1.05); box-shadow: 0 0 20px var(--primary-glow); }
+    .telemetry-item label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dark); letter-spacing: 0.05em; }
+    .telemetry-item p { font-size: 1.75rem; font-weight: 600; line-height: 1.2; margin: 0; }
+    .telemetry-value { transition: color 0.5s ease; }
+    #joystick-area { display: flex; align-items: center; justify-content: center; position: relative; min-height: 340px; }
+    #joystick-container { position: relative; width: min(80vw, 320px); height: min(80vw, 320px); cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
+    #joystick-bg { width: 100%; height: 100%; border-radius: 50%; background: rgba(0,0,0,0.25); border: 2px solid var(--border-dark); position: absolute; }
+    .joystick-ring { width: 100%; height: 100%; position: absolute; border: 2px solid; border-radius: 50%; opacity: 0.5; }
+    #joystick-handle { position: absolute; width: 40%; height: 40%; background: linear-gradient(45deg, var(--primary), #38bdf8); border-radius: 50%; box-shadow: inset 0 0 15px rgba(255,255,255,0.2), 0 5px 25px var(--primary-glow); top:50%; left:50%; transform: translate(-50%, -50%); }
+    #joystick-coords { position: absolute; bottom: -2rem; font-size: 0.8rem; color: var(--text-dark); }
+    #action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* Charts View */
+    #view-charts { display: flex; flex-direction: column; gap: 1rem; }
+    .chart-header { display:flex; justify-content:space-between; align-items:center; padding: 0 0.5rem; flex-shrink: 0;}
+    #chart-container { flex-grow: 1; position: relative; padding: 0.5rem; }
+
+    /* Settings View */
+    #view-settings { display: flex; flex-direction: column; gap: 1.5rem; }
+    .settings-group { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; }
+    .settings-group h2 { margin: 0; font-size: 1.25rem; font-weight: 600; border-bottom: 1px solid var(--border-dark); padding-bottom: 0.75rem; margin-bottom: 0.5rem; }
+    .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .input-group label { color: var(--text-dark); font-size: 0.9rem; }
+    .input-field { width: 100%; padding: 0.8rem 1rem; border-radius: 0.75rem; background: rgba(0,0,0,0.25); border: 1px solid var(--border-dark); color: var(--text-light); box-sizing: border-box; font-size: 1rem; transition: all 0.2s ease; }
+    .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .input-field:invalid { border-color: var(--secondary); }
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: rgba(0,0,0,0.25); border-radius: 4px; border: 1px solid var(--border-dark); cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary-glow); }
+    
+    /* --- Overlays & Modals --- */
+    #connection-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1.5rem;
+      opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    #connection-overlay.visible { opacity: 1; visibility: visible; }
+    .connection-status-text { font-size: 1.2rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* --- MISC & Animations --- */
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.95); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #toast-container { position: fixed; bottom: calc(var(--nav-height) + 1rem); left: 1rem; right: 1rem; z-index: 1000; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; pointer-events: none; }
+    .toast { color: #fff; font-weight: 600; padding: 0.75rem 1.25rem; border-radius: 1rem; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); animation: toast-in 0.4s cubic-bezier(0.25, 1, 0.5, 1), toast-out 0.4s ease 2.6s forwards; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(5px); } }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+  </style>
+</head>
+
+<body>
+
+  <!-- Loader -->
+  <div id="loader-wrapper">
+    <div class="z-10 backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-10 text-center shadow-2xl max-w-md w-11/12">
+      <div class="mx-auto mb-6 w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 loader-car-animation">
+        <svg xmlns="http://www.w.org/2000/svg" class="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 13l2-5h14l2 5M5 13v5a1 1 0 001 1h1a1 1 0 001-1v-2h8v2a1 1 0 001 1h1a1 1 0 001-1v-5M7 16h.01M17 16h.01" />
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold text-white mb-2 tracking-wide">Phoenix Rover Control</h1>
+      <p class="text-cyan-200 mb-6 text-sm uppercase">Connecting gesture control...</p>
+      <div class="w-full bg-white/20 rounded-full h-2 overflow-hidden mb-4"><div class="loader-progress-bar bg-gradient-to-r from-teal-400 to-cyan-500 h-2 rounded-full"></div></div>
+      <p class="text-cyan-300 text-sm" id="loader-progress-text">Loading sensors...</p>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div id="connection-indicator" style="width: 12px; height: 12px; border-radius: 50%; background: var(--text-dark); transition: all 0.5s;" aria-live="polite"></div>
+        <div>
+          <h1 style="font-size: 1.25rem; font-weight: 700; letter-spacing: 0.1em; margin: 0; color:var(--primary); filter:drop-shadow(0 0 5px var(--primary-glow));">PHOENIX</h1>
+          <p id="connection-status" class="mono" style="font-size: 0.75rem; color: var(--text-dark); margin: 0; transition: color 0.5s;" aria-live="assertive">OFFLINE</p>
+        </div>
+      </div>
+      <div class="mono" style="text-align: right;">
+          <span id="system-time" style="font-size: 1.1rem; color: var(--text-light);">--:--:--</span>
+          <span id="ping-value" style="display:none; font-size:0.8rem;">-- ms</span>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <div class="view-container">
+          <!-- View: Control -->
+          <section id="view-control" class="app-view" role="tabpanel">
+            <div id="telemetry-bar">
+              <div class="telemetry-item glass-panel" role="status" aria-label="Obstacle Distance">
+                <label>OBSTACLE</label>
+                <p><span id="obstacle-dist" class="telemetry-value">--</span><small style="font-size: 0.9rem; opacity: 0.6;">cm</small></p>
+              </div>
+              <div class="telemetry-item glass-panel" role="status" aria-label="Battery Level">
+                <label>BATTERY</label>
+                <p><span id="battery-percent" class="telemetry-value">--</span><small style="font-size: 0.9rem; opacity: 0.6;">%</small></p>
+              </div>
+              <div class="telemetry-item glass-panel" role="status" aria-label="Speed">
+                <label>SPEED</label>
+                <p><span id="speed-value" class="telemetry-value">--</span><small style="font-size: 0.9rem; opacity: 0.6;">m/s</small></p>
+              </div>
+            </div>
+
+            <div id="joystick-area" role="region" aria-label="Joystick Control">
+              <div id="joystick-container" tabindex="0" aria-label="Virtual Joystick for rover movement">
+                <div id="joystick-bg"></div>
+                <div class="joystick-ring" style="border-color: rgba(56, 189, 248, 0.2); animation: spin 30s linear infinite;"></div>
+                <div id="joystick-handle" aria-hidden="true"></div>
+                <div id="joystick-coords" class="mono" aria-live="polite">X: 0.00, Y: 0.00</div>
+              </div>
+            </div>
+
+            <div id="action-buttons">
+              <button id="stop-btn" class="btn btn-danger" aria-label="Emergency Stop">E-STOP</button>
+              <button id="auto-pilot-btn" class="btn btn-primary" aria-label="Toggle Autopilot">AUTOPILOT</button>
+            </div>
+          </section>
+
+          <!-- View: Telemetry Charts -->
+          <section id="view-charts" class="app-view" role="tabpanel" aria-hidden="true">
+              <div class="chart-header">
+                  <h2 class="mono">REAL-TIME TELEMETRY</h2>
+                  <button id="toggle-obstacle-btn" class="btn" style="padding: 0.5rem 1rem; border-radius: 0.75rem; text-transform: none;" aria-label="Toggle Obstacle Data in Chart">Show Obstacle</button>
+              </div>
+              <div id="chart-container" class="glass-panel">
+                  <canvas id="telemetry-chart" aria-label="Line chart showing speed, battery, and obstacle data over time"></canvas>
+              </div>
+          </section>
+
+          <!-- View: Settings & Connection -->
+          <section id="view-settings" class="app-view" role="tabpanel" aria-hidden="true">
+              <div class="settings-group glass-panel">
+                  <h2>Connection Manager</h2>
+                  <div class="input-group">
+                      <label for="ws-url">WebSocket URL</label>
+                      <input id="ws-url" class="input-field mono" type="text" placeholder="ws://192.168.4.1:81/ws" aria-describedby="ws-url-help">
+                      <small id="ws-url-help" class="sr-only">Enter the WebSocket URL for WiFi connection</small>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                      <button id="ws-connect-btn" class="btn" aria-label="Connect via WiFi">Connect WiFi</button>
+                      <button id="ble-connect-btn" class="btn" aria-label="Connect via Bluetooth">Connect BLE</button>
+                  </div>
+                  <button id="demo-mode-btn" class="btn" aria-label="Start Demo Mode">Start Demo Mode</button>
+                  <button id="disconnect-btn" class="btn" style="background: rgba(148, 163, 184, 0.2);" aria-label="Disconnect Current Connection">Disconnect</button>
+              </div>
+
+              <div class="settings-group glass-panel">
+                  <h2>Rover Settings</h2>
+                  <div class="input-group">
+                      <label for="joystick-sens">Joystick Sensitivity: <span id="sens-value" class="mono">1.0x</span></label>
+                      <input id="joystick-sens" type="range" min="0.5" max="2" step="0.1" value="1" aria-label="Adjust joystick sensitivity">
+                  </div>
+                  <div class="input-group">
+                      <label for="chart-rate">Chart Update Rate (ms)</label>
+                      <input id="chart-rate" type="number" class="input-field mono" value="500" min="100" max="2000" aria-label="Set chart update interval">
+                  </div>
+                  <button id="save-settings-btn" class="btn btn-primary" aria-label="Save Settings">Save Settings</button>
+              </div>
+          </section>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="app-nav" role="navigation" aria-label="Main Navigation">
+      <div class="nav-dock">
+          <button class="nav-item active" data-view-index="0" aria-label="Switch to Control View" aria-controls="view-control">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>Control</span>
+            <div class="active-indicator"></div>
+          </button>
+          <button class="nav-item" data-view-index="1" aria-label="Switch to Charts View" aria-controls="view-charts">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
+            <span>Charts</span>
+            <div class="active-indicator"></div>
+          </button>
+          <button class="nav-item" data-view-index="2" aria-label="Switch to Settings View" aria-controls="view-settings">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <span>Settings</span>
+            <div class="active-indicator"></div>
+          </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Connection Overlay -->
+  <div id="connection-overlay">
+      <div class="loading-spinner" style="width: 50px; height: 50px; border-width: 4px;"></div>
+      <p id="connection-overlay-text" class="connection-status-text mono">CONNECTING...</p>
+      <button id="cancel-connection-btn" class="btn" style="background: rgba(148, 163, 184, 0.2);">Cancel</button>
+  </div>
+
+  <div id="toast-container"></div>
+  <audio id="alert-sound" src="data:audio/mp3;base64,//uQxAQ..." preload="auto" style="display:none;"></audio>
+  
+<script>
+// --- Loader Logic ---
+function runLoader() {
+  const steps=["Loading gyroscope...","Calibrating hand gestures...","Connecting Bluetooth...","Syncing dashboard...","System ready!"];
+  let i=0;
+  const progressText=document.getElementById("loader-progress-text");
+  
+  function updateLoaderText(){
+    progressText.textContent=steps[i];
+    if(i<steps.length-1){
+      i++;
+      setTimeout(updateLoaderText,800);
+    } else {
+      setTimeout(() => {
+        document.getElementById('loader-wrapper').classList.add('hidden');
+        const appContainer = document.querySelector('.app-container');
+        appContainer.style.display = 'flex'; // Show the main app
+        // Initialize the main app now that it's visible
+        new RoverPhoenix(); 
+      }, 1000);
+    }
+  }
+  updateLoaderText();
+}
+
+// --- PWA Service Worker Registration ---
+if ('serviceWorker' in navigator) {
+  const serviceWorkerUrl = `data:application/javascript,
+    const CACHE_NAME = 'phoenix-control-cache-v1';
+    self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.add('/'))));
+    self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+  `;
+  navigator.serviceWorker.register(serviceWorkerUrl).catch(err => console.error('Service worker registration failed:', err));
+}
+
+// Register the Chart.js Zoom plugin
+Chart.register(window.ChartZoom);
+
+// --- Main Application Logic ---
+class RoverPhoenix {
+    constructor() {
+        this.dom = this.mapDOM();
+        this.state = this.getInitialState();
+        this.chart = null;
+        this.bleDevice = null;
+        this.bleCharacteristic = null;
+        this.settings = { chartRate: 500, joystickSens: 1.0, wsUrl: '' };
+        this.activeViewIndex = 0;
+        this.connectionAbortController = null;
+
+        this.bindEvents();
+        this.loadSettings();
+        this.initChart();
+        this.initJoystick();
+        this.initSwipeNavigation();
+        this.updateSystemTime();
+        requestAnimationFrame(this.gameLoop.bind(this));
+    }
+    
+    mapDOM() {
+        const get = (id) => document.getElementById(id);
+        return {
+            appMain: document.querySelector('.app-main'), viewContainer: document.querySelector('.view-container'),
+            connectionIndicator: get('connection-indicator'), connectionStatus: get('connection-status'),
+            systemTime: get('system-time'), pingValue: get('ping-value'),
+            obstacleDist: get('obstacle-dist'), batteryPercent: get('battery-percent'), speedValue: get('speed-value'),
+            joystickContainer: get('joystick-container'), joystickHandle: get('joystick-handle'), joystickCoords: get('joystick-coords'),
+            stopBtn: get('stop-btn'), autoPilotBtn: get('auto-pilot-btn'),
+            telemetryChartCanvas: get('telemetry-chart'), toggleObstacleBtn: get('toggle-obstacle-btn'),
+            wsUrlInput: get('ws-url'), wsConnectBtn: get('ws-connect-btn'), bleConnectBtn: get('ble-connect-btn'),
+            demoModeBtn: get('demo-mode-btn'), disconnectBtn: get('disconnect-btn'),
+            joystickSensInput: get('joystick-sens'), sensValue: get('sens-value'),
+            chartRateInput: get('chart-rate'), saveSettingsBtn: get('save-settings-btn'),
+            toastContainer: get('toast-container'), alertSound: get('alert-sound'),
+            navItems: document.querySelectorAll('.nav-item'), appViews: document.querySelectorAll('.app-view'),
+            connectionOverlay: get('connection-overlay'), connectionOverlayText: get('connection-overlay-text'), cancelConnectionBtn: get('cancel-connection-btn'),
+        };
+    }
+
+    getInitialState() {
+        return {
+            connection: { type: 'none', status: 'offline', ws: null, demoInterval: null },
+            telemetry: { obstacle_dist: 0, battery: 0, speed: 0, ping: 0 },
+            autoPilot: false,
+            joystick: { x: 0, y: 0, active: false },
+            lastControlSend: { time: 0, x: 0, y: 0 },
+            pingStart: 0,
+            showObstacleInChart: false,
+        };
+    }
+
+    bindEvents() {
+        this.dom.navItems.forEach(item => item.addEventListener('click', () => this.navigateTo(parseInt(item.dataset.viewIndex))));
+        this.dom.wsConnectBtn.addEventListener('click', () => this.connect('ws'));
+        this.dom.bleConnectBtn.addEventListener('click', () => this.connect('ble'));
+        this.dom.demoModeBtn.addEventListener('click', () => this.connect('demo'));
+        this.dom.disconnectBtn.addEventListener('click', () => this.disconnect());
+        this.dom.cancelConnectionBtn.addEventListener('click', () => this.abortConnection());
+        this.dom.stopBtn.addEventListener('click', () => this.sendCommand('S'));
+        this.dom.autoPilotBtn.addEventListener('click', () => this.toggleAutoPilot());
+        this.dom.toggleObstacleBtn.addEventListener('click', () => this.toggleObstacleChart());
+        this.dom.joystickSensInput.addEventListener('input', e => this.dom.sensValue.textContent = `${parseFloat(e.target.value).toFixed(1)}x`);
+        this.dom.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
+    }
+
+    navigateTo(viewIndex) {
+        if (this.activeViewIndex === viewIndex) return;
+        this.activeViewIndex = viewIndex;
+
+        this.dom.viewContainer.style.transform = `translateX(-${viewIndex * 100}%)`;
+
+        this.dom.appViews.forEach((v, i) => {
+            const isActive = i === viewIndex;
+            v.setAttribute('aria-hidden', !isActive);
+            v.inert = !isActive;
+        });
+        
+        this.dom.navItems.forEach((item, i) => item.classList.toggle('active', i === viewIndex));
+
+        if (viewIndex === 1) {
+            setTimeout(() => this.chart?.resize(), 400); 
+        }
+    }
+
+    initSwipeNavigation() {
+        let touchStartX = 0;
+        let touchDeltaX = 0;
+        const swipeThreshold = 50;
+
+        this.dom.appMain.addEventListener('touchstart', (e) => {
+            if (e.target.closest('#joystick-container') || e.target.type === 'range' || e.target.closest('#chart-container')) return;
+            touchStartX = e.touches[0].clientX;
+            touchDeltaX = 0;
+        }, { passive: true });
+
+        this.dom.appMain.addEventListener('touchmove', (e) => {
+             if (touchStartX === 0) return;
+             touchDeltaX = e.touches[0].clientX - touchStartX;
+        }, { passive: true });
+
+        this.dom.appMain.addEventListener('touchend', () => {
+            if (Math.abs(touchDeltaX) > swipeThreshold) {
+                if (touchDeltaX < 0 && this.activeViewIndex < this.dom.appViews.length - 1) {
+                    this.navigateTo(this.activeViewIndex + 1);
+                } else if (touchDeltaX > 0 && this.activeViewIndex > 0) {
+                    this.navigateTo(this.activeViewIndex - 1);
+                }
+            }
+            touchStartX = 0;
+        });
+    }
+
+    showConnectionOverlay(show, text = 'CONNECTING...') {
+        this.dom.connectionOverlayText.textContent = text;
+        this.dom.connectionOverlay.classList.toggle('visible', show);
+    }
+    
+    toast(message, type = 'info') {
+        const colors = { info: '#0ea5e9', success: '#22c55e', warning: '#fbbf24', error: '#f43f5e' };
+        const toastEl = document.createElement('div');
+        toastEl.className = 'toast';
+        toastEl.style.backgroundColor = `rgba(${parseInt(colors[type].slice(1,3),16)},${parseInt(colors[type].slice(3,5),16)},${parseInt(colors[type].slice(5,7),16)},0.8)`;
+        toastEl.textContent = message;
+        toastEl.setAttribute('role', 'alert');
+        this.dom.toastContainer.appendChild(toastEl);
+        setTimeout(() => toastEl.remove(), 3000);
+    }
+
+    loadSettings() {
+        try {
+            const saved = localStorage.getItem('roverSettings');
+            if (saved) {
+                this.settings = { ...this.settings, ...JSON.parse(saved) };
+                this.dom.chartRateInput.value = this.settings.chartRate;
+                this.dom.joystickSensInput.value = this.settings.joystickSens;
+                this.dom.sensValue.textContent = `${this.settings.joystickSens.toFixed(1)}x`;
+                this.dom.wsUrlInput.value = this.settings.wsUrl;
+            }
+        } catch (e) { console.error("Could not load settings", e); }
+    }
+
+    saveSettings() {
+        try {
+            this.settings.chartRate = parseInt(this.dom.chartRateInput.value) || 500;
+            this.settings.joystickSens = parseFloat(this.dom.joystickSensInput.value) || 1;
+            this.settings.wsUrl = this.dom.wsUrlInput.value.trim();
+            localStorage.setItem('roverSettings', JSON.stringify(this.settings));
+            this.toast('Settings Saved', 'success');
+            if (this.state.connection.type === 'demo') {
+                clearInterval(this.state.connection.demoInterval);
+                this.startDemoMode();
+            }
+        } catch (e) {
+            console.error("Could not save settings", e);
+            this.toast('Failed to save settings.', 'error');
+        }
+    }
+
+    async connect(type) {
+        if (this.state.connection.status !== 'offline') await this.disconnect();
+        this.state.connection.type = type;
+        this.updateConnectionStatus('connecting');
+        this.connectionAbortController = new AbortController();
+        this.showConnectionOverlay(true, `CONNECTING VIA ${type.toUpperCase()}...`);
+
+        try {
+            if (type === 'ws') await this.connectWebSocket();
+            else if (type === 'ble') await this.connectBluetooth();
+            else if (type === 'demo') this.startDemoMode();
+            this.navigateTo(0);
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error(`Connection failed for ${type}:`, error);
+                this.toast(error.message || 'Connection Failed', 'error');
+                this.disconnect();
+            }
+        } finally {
+            this.showConnectionOverlay(false);
+        }
+    }
+
+    abortConnection() {
+        if (this.connectionAbortController) {
+            this.connectionAbortController.abort();
+            this.toast('Connection cancelled', 'warning');
+            this.disconnect();
+        }
+    }
+
+    connectWebSocket() {
+        return new Promise((resolve, reject) => {
+            const url = this.dom.wsUrlInput.value.trim() || this.dom.wsUrlInput.placeholder;
+            if (!url.startsWith('ws://') && !url.startsWith('wss://')) {
+                return reject(new Error('Invalid WebSocket URL.'));
+            }
+            this.saveSettings();
+            const ws = new WebSocket(url);
+            this.state.connection.ws = ws;
+
+            const timeout = setTimeout(() => {
+                ws.close();
+                reject(new Error('Connection timeout.'));
+            }, 10000);
+
+            const signal = this.connectionAbortController.signal;
+            signal.addEventListener('abort', () => { clearTimeout(timeout); ws.close(); reject(new DOMException('Aborted by user', 'AbortError')); });
+
+            ws.onopen = () => { clearTimeout(timeout); this.onConnectionOpen('WiFi'); resolve(); };
+            ws.onmessage = (event) => this.handleMessage(event.data);
+            ws.onerror = () => reject(new Error('WebSocket error. Check URL and server.'));
+            ws.onclose = () => this.disconnect();
+        });
+    }
+
+    async connectBluetooth() {
+        if (!navigator.bluetooth) throw new Error('Web Bluetooth not supported.');
+        
+        const signal = this.connectionAbortController.signal;
+        
+        this.bleDevice = await navigator.bluetooth.requestDevice({ 
+            filters: [{ services: ['0000ffe0-0000-1000-8000-00805f9b34fb'] }],
+            signal: signal,
+        });
+
+        if (signal.aborted) return;
+        
+        const server = await this.bleDevice.gatt.connect();
+        const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+        this.bleCharacteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+        await this.bleCharacteristic.startNotifications();
+        
+        this.bleCharacteristic.addEventListener('characteristicvaluechanged', e => {
+            this.handleMessage(new TextDecoder().decode(e.target.value));
+        });
+        this.bleDevice.addEventListener('gattserverdisconnected', () => this.disconnect());
+
+        this.onConnectionOpen('Bluetooth');
+    }
+
+    startDemoMode() {
+        this.onConnectionOpen('Demo');
+        this.state.connection.demoInterval = setInterval(() => {
+            const now = Date.now();
+            this.handleMessage(JSON.stringify({
+                type: 'telemetry',
+                payload: {
+                    obstacle_dist: 50 + Math.sin(now / 5000) * 150,
+                    battery: Math.max(0, 85 - (Date.now() / 20000 % 100)),
+                    speed: 0.5 + Math.random() * 1.5,
+                }
+            }));
+        }, this.settings.chartRate);
+    }
+    
+    onConnectionOpen(type) {
+        this.updateConnectionStatus('connected');
+        this.toast(`${type} Connection Established`, 'success');
+        if (this.state.connection.type === 'ws') {
+            this.state.pingStart = Date.now();
+            this.sendData({ type: 'ping' });
+        }
+    }
+
+    async disconnect() {
+        const { type, status, ws, demoInterval } = this.state.connection;
+        if (status === 'offline') return;
+        
+        if (type === 'ws' && ws) ws.close(1000);
+        if (type === 'ble' && this.bleDevice?.gatt?.connected) this.bleDevice.gatt.disconnect();
+        if (type === 'demo' && demoInterval) clearInterval(demoInterval);
+        
+        this.state = this.getInitialState();
+        this.bleDevice = null; this.bleCharacteristic = null;
+        this.updateConnectionStatus('offline');
+        this.toast('Disconnected', 'warning');
+        this.updateTelemetryUI({ obstacle_dist: '--', battery: '--', speed: '--' });
+        this.toggleAutoPilot(false);
+        if (this.chart) { 
+            this.chart.data.datasets.forEach(ds => ds.data = []); 
+            this.chart.update('none'); 
+        }
+    }
+  
+    sendData(data) {
+        if (this.state.connection.status !== 'connected') return;
+        const message = JSON.stringify(data);
+        try {
+            if (this.state.connection.type === 'ws') this.state.connection.ws.send(message);
+            else if (this.state.connection.type === 'ble' && this.bleCharacteristic) this.bleCharacteristic.writeValueWithoutResponse(new TextEncoder().encode(message));
+        } catch (e) { 
+            console.error('Send error:', e);
+            this.toast("Communication Error", "error");
+            this.disconnect();
+        }
+    }
+  
+    sendCommand(command) { this.sendData({ type: 'command', command }); }
+
+    handleMessage(rawData) {
+        try {
+            const data = JSON.parse(rawData);
+            switch (data.type) {
+                case 'telemetry':
+                    this.state.telemetry = { ...this.state.telemetry, ...data.payload };
+                    this.updateTelemetryUI(this.state.telemetry);
+                    this.addChartData(this.state.telemetry);
+                    break;
+                case 'pong':
+                    this.state.telemetry.ping = Date.now() - this.state.pingStart;
+                    this.updatePingUI(this.state.telemetry.ping);
+                    setTimeout(() => { if(this.state.connection.status === 'connected') { this.state.pingStart = Date.now(); this.sendData({ type: 'ping' }); }}, 1000);
+                    break;
+                case 'alert':
+                    this.toast(data.message || 'Alert!', 'error');
+                    this.dom.alertSound.play().catch(e => console.warn('Audio play failed:', e));
+                    break;
+            }
+        } catch (e) { /* Ignore non-JSON messages */ }
+    }
+
+    updateConnectionStatus(status) {
+        this.state.connection.status = status;
+        const indicator = this.dom.connectionIndicator;
+        indicator.style.animation = ''; indicator.style.boxShadow = 'none';
+        let statusText = 'OFFLINE', color = 'var(--text-dark)';
+        
+        this.dom.pingValue.style.display = 'none';
+
+        if (status === 'connecting') {
+            statusText = 'CONNECTING...'; color = 'var(--warning)';
+            indicator.style.animation = 'pulse 1.5s infinite ease-in-out';
+        } else if (status === 'connected') {
+            statusText = `${this.state.connection.type.toUpperCase()} ONLINE`; color = 'var(--success)';
+            indicator.style.boxShadow = `0 0 10px var(--success-glow)`;
+            if(this.state.connection.type === 'ws') this.dom.pingValue.style.display = 'block';
+        }
+        indicator.style.backgroundColor = color;
+        this.dom.connectionStatus.textContent = statusText;
+    }
+
+    updatePingUI(ping) {
+        const el = this.dom.pingValue;
+        el.textContent = `${Math.round(ping)} ms`;
+        el.style.color = ping > 250 ? 'var(--secondary)' : ping > 150 ? 'var(--warning)' : 'var(--success)';
+    }
+
+    updateTelemetryUI({ obstacle_dist, battery, speed }) {
+        const update = (el, val, dp) => { if (typeof val === 'number') el.textContent = val.toFixed(dp); else el.textContent = val; };
+        update(this.dom.obstacleDist, obstacle_dist, 0);
+        update(this.dom.batteryPercent, battery, 0);
+        update(this.dom.speedValue, speed, 1);
+        if (typeof battery === 'number') {
+            this.dom.batteryPercent.style.color = battery < 20 ? 'var(--secondary)' : battery < 50 ? 'var(--warning)' : 'var(--success)';
+        }
+    }
+
+    updateSystemTime() {
+        this.dom.systemTime.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+        setTimeout(() => this.updateSystemTime(), 1000);
+    }
+
+    toggleAutoPilot(forceState = null) {
+        this.state.autoPilot = forceState !== null ? forceState : !this.state.autoPilot;
+        this.sendCommand(this.state.autoPilot ? 'A' : 'M');
+        this.dom.autoPilotBtn.textContent = this.state.autoPilot ? 'MANUAL' : 'AUTOPILOT';
+        this.dom.autoPilotBtn.classList.toggle('btn-primary', !this.state.autoPilot);
+        this.dom.autoPilotBtn.style.background = this.state.autoPilot ? 'var(--warning)' : '';
+        if (forceState === null) this.toast(`Autopilot ${this.state.autoPilot ? 'Engaged' : 'Disengaged'}`, 'info');
+    }
+
+    toggleObstacleChart() {
+        this.state.showObstacleInChart = !this.state.showObstacleInChart;
+        if (this.chart) {
+            this.chart.setDatasetVisibility(2, this.state.showObstacleInChart);
+            this.chart.update('none');
+        }
+        this.dom.toggleObstacleBtn.style.background = this.state.showObstacleInChart ? 'var(--primary)' : '';
+        this.dom.toggleObstacleBtn.textContent = this.state.showObstacleInChart ? 'Hide Obstacle' : 'Show Obstacle';
+    }
+
+    initChart() {
+        const whiteColor = getComputedStyle(document.documentElement).getPropertyValue('--text-light').trim();
+        const gridColor = 'rgba(226, 232, 240, 0.15)';
+        
+        const ctx = this.dom.telemetryChartCanvas.getContext('2d');
+        const createGradient = (color) => { const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight); g.addColorStop(0, `${color}80`); g.addColorStop(1, `${color}00`); return g; };
+        
+        this.chart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets: [
+                { label: 'Speed', data: [], yAxisID: 'y', borderColor: '#0ea5e9', borderWidth: 2.5, fill: true, backgroundColor: createGradient('#0ea5e9'), pointRadius: 0, tension: 0.4 },
+                { label: 'Battery %', data: [], yAxisID: 'y1', borderColor: '#22c55e', borderWidth: 2, pointRadius: 0, tension: 0.4, borderDash: [5, 5] },
+                { label: 'Obstacle (cm)', data: [], yAxisID: 'y1', borderColor: '#fbbf24', borderWidth: 2, pointRadius: 0, tension: 0.4, hidden: true }
+            ]},
+            options: {
+                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                scales: {
+                    x: { type: 'time', time: { unit: 'second' }, grid: { color: gridColor }, ticks: { color: whiteColor } },
+                    y: { position: 'left', title: { display: true, text: 'Speed (m/s)', color: whiteColor }, grid: { color: gridColor }, ticks: { color: whiteColor }, suggestedMin: 0 },
+                    y1: { position: 'right', max: 200, min: 0, title: { display: true, text: '% / cm', color: whiteColor }, grid: { drawOnChartArea: false }, ticks: { color: whiteColor } }
+                },
+                plugins: {
+                    legend: { labels: { color: whiteColor } },
+                    zoom: {
+                        pan: { enabled: true, mode: 'xy' },
+                        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' }
+                    }
+                },
+                animation: false
+            }
+        });
+    }
+
+    addChartData({ speed, battery, obstacle_dist }) {
+        if (!this.chart || this.state.connection.status !== 'connected') return;
+        const now = Date.now();
+        const datasets = this.chart.data.datasets;
+        datasets[0].data.push({ x: now, y: speed });
+        datasets[1].data.push({ x: now, y: battery });
+        datasets[2].data.push({ x: now, y: obstacle_dist });
+        const maxDataPoints = Math.floor(60000 / this.settings.chartRate);
+        datasets.forEach(ds => { while (ds.data.length > maxDataPoints) ds.data.shift(); });
+        if (this.activeViewIndex === 1) this.chart.update('none');
+    }
+
+    initJoystick() {
+        const c = this.dom.joystickContainer, h = this.dom.joystickHandle;
+        const onMove = e => {
+            if (!this.state.joystick.active) return;
+            e.preventDefault();
+            const rect = c.getBoundingClientRect(), size = rect.width, maxMove = (size - h.offsetWidth) / 2;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let x = clientX - rect.left - size / 2, y = clientY - rect.top - size / 2;
+            const dist = Math.min(Math.sqrt(x*x + y*y), maxMove), angle = Math.atan2(y, x);
+            x = Math.cos(angle) * dist; y = Math.sin(angle) * dist;
+            h.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            this.state.joystick.x = parseFloat((x / maxMove * this.settings.joystickSens).toFixed(4));
+            this.state.joystick.y = parseFloat((-(y / maxMove) * this.settings.joystickSens).toFixed(4));
+        };
+        const onEnd = () => {
+            if (!this.state.joystick.active) return;
+            this.state.joystick.active = false;
+            h.style.transition = 'transform 0.2s cubic-bezier(0.25, 1, 0.5, 1)';
+            h.style.transform = 'translate(-50%, -50%)';
+            requestAnimationFrame(() => h.style.transition = '');
+            this.state.joystick.x = 0; this.state.joystick.y = 0;
+            this.dom.joystickCoords.textContent = `X: 0.00, Y: 0.00`;
+        };
+        const onStart = e => { e.preventDefault(); this.state.joystick.active = true; onMove(e); };
+
+        c.addEventListener('mousedown', onStart); document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onEnd);
+        c.addEventListener('touchstart', onStart, { passive: false }); document.addEventListener('touchmove', onMove, { passive: false }); document.addEventListener('touchend', onEnd);
+    }
+
+    gameLoop = (timestamp) => {
+        requestAnimationFrame(this.gameLoop);
+        const { x, y } = this.state.autoPilot ? { x: 0, y: 0 } : this.state.joystick;
+        const now = performance.now();
+        if (now - this.state.lastControlSend.time > 50) {
+            if (this.state.joystick.active || this.state.lastControlSend.x !== 0 || this.state.lastControlSend.y !== 0) {
+                 this.sendData({ type: 'control', x, y });
+                 this.state.lastControlSend = { time: now, x, y };
+            }
+        }
+        if (this.state.joystick.active) {
+            this.dom.joystickCoords.textContent = `X: ${x.toFixed(2)}, Y: ${y.toFixed(2)}`;
+        }
+    }
+}
+
+// Start the loader animation and then the main app
+document.addEventListener('DOMContentLoaded', runLoader);
+</script>
+</body>
+</html>
